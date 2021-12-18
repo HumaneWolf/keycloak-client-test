@@ -26,6 +26,18 @@
 		});
 	}
 
+	
+	$: returnedData = '';
+	const doRequest = () => {
+		fetch('http://localhost:5000/getMe', {
+			headers: {
+				'Authorization': auth.getHeaderValue(),
+			}
+		}).then(x => x.json())
+		.then(x => {
+			returnedData = JSON.stringify(x);
+		});
+	}
 </script>
 
 <svelte:head>
@@ -37,9 +49,14 @@
 		<h1>Welcome, {nickname}!</h1>
 	{/if}
 
+	{#if returnedData}
+		<p>{returnedData}</p>
+	{/if}
+
 	<div>
 		<button on:click={authorizeMe}>Authorize</button>
 		<button on:click={tokenMe}>Token</button>
+		<button on:click={doRequest}>Call api</button>
 	</div>
 </section>
 
