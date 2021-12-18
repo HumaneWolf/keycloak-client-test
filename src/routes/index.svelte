@@ -3,13 +3,14 @@
 </script>
 
 <script lang="ts">
-	import Counter from '$lib/Counter.svelte';
 	import { AuthHandler } from '../auth';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 
 	const code = $page.query.get('code');
 	let auth: AuthHandler;
+
+	$: nickname = undefined;
 
 	onMount(async () => {
 		auth = new AuthHandler();
@@ -20,7 +21,9 @@
 	}
 
 	const tokenMe = () => {
-		auth?.getToken(code);
+		auth?.getToken(code).then(() => {
+			nickname = auth.data.name;
+		});
 	}
 
 </script>
@@ -30,7 +33,9 @@
 </svelte:head>
 
 <section>
-	<h1>Welcome!</h1>
+	{#if nickname}
+		<h1>Welcome, {nickname}!</h1>
+	{/if}
 
 	<div>
 		<button on:click={authorizeMe}>Authorize</button>

@@ -9,8 +9,8 @@ export class AuthHandler {
     private request: AuthorizationRequest;
     private response: AuthorizationResponse;
 
-    public data: TokenResponse;
-
+    public token: TokenResponse;
+    public data: any;
 
     private CLIENT_ID = 'test-client';
     private REDIRECT_URL = 'http://localhost:3000/';
@@ -76,12 +76,26 @@ export class AuthHandler {
                 });
         }
 
-        this.tokenHandler.performTokenRequest(this.configuration, request)
+        return this.tokenHandler.performTokenRequest(this.configuration, request)
             .then(response => {
-                this.data = response;
+                this.token = response;
+                this.setTokenData();
                 console.log('Token received.');
-                console.log(response);
             });
+    }
+
+    private setTokenData() {
+        let urlBase64Data = this.token.accessToken.split('.')[1];
+        let base64 = urlBase64Data.replace(/-/g, '+').replace(/_/g, '/');
+        var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+    
+        this.data = JSON.parse(jsonPayload);
+    }
+
+    public isAuthenticated(): boolean {
+        return this.token !== undefined;
     }
 }
 
