@@ -51,31 +51,35 @@ export class AuthHandler {
     }
 
     public getToken(code: string) {
-        let request: TokenRequest|null = null;
-
-        if (code) {
-            let extras: StringMap|undefined = undefined;
-            if (this.request && this.request.internal) {
-                extras = {};
-                extras['code_verifier'] = this.request.internal['code_verifier'];
-            }
-            request = new TokenRequest({
-                client_id: this.CLIENT_ID,
-                redirect_uri: this.REDIRECT_URL,
-                grant_type: GRANT_TYPE_AUTHORIZATION_CODE,
-                code: code,
-                extras: extras
-            });
-        } else if (this.response) {
-            // use the token response to make a request for an access token
-            request = new TokenRequest({
-                client_id: this.CLIENT_ID,
-                redirect_uri: this.REDIRECT_URL,
-                grant_type: GRANT_TYPE_REFRESH_TOKEN,
-                refresh_token: (this.response as any).refreshToken,
-                });
+        let extras: StringMap|undefined = undefined;
+        if (this.request && this.request.internal) {
+            extras = {};
+            extras['code_verifier'] = this.request.internal['code_verifier'];
         }
+        let request = new TokenRequest({
+            client_id: this.CLIENT_ID,
+            redirect_uri: this.REDIRECT_URL,
+            grant_type: GRANT_TYPE_AUTHORIZATION_CODE,
+            code: code,
+            extras: extras
+        });
 
+        return this.tokenHandler.performTokenRequest(this.configuration, request)
+            .then(response => {
+                this.token = response;
+                this.setTokenData();
+                console.log('Token received.');
+            });
+    }
+
+    public refreshToken() {
+        let request = new TokenRequest({
+            client_id: this.CLIENT_ID,
+            redirect_uri: this.REDIRECT_URL,
+            grant_type: GRANT_TYPE_REFRESH_TOKEN,
+            refresh_token: this.token.refreshToken,
+        });
+        
         return this.tokenHandler.performTokenRequest(this.configuration, request)
             .then(response => {
                 this.token = response;
@@ -96,6 +100,10 @@ export class AuthHandler {
 
     public isAuthenticated(): boolean {
         return this.token !== undefined;
+    }
+
+    public getHeaderValue(): string {
+        return `${this.token.tokenType} ${this.token.accessToken}`;
     }
 }
 
